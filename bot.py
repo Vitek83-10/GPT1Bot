@@ -3,10 +3,7 @@ import os
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-app = Client(
-    "ViktorSignalBot",
-    bot_token=BOT_TOKEN
-)
+app = Client("ViktorSignalBot", bot_token=BOT_TOKEN)
 
 @app.on_message(filters.command("start"))
 async def start(client, message):
