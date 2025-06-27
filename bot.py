@@ -9,7 +9,8 @@ app = Client(
     "gpt1bot_session",
     bot_token=BOT_TOKEN,
     api_id=API_ID,
-    api_hash=API_HASH
+    api_hash=API_HASH,
+    bot=True  # ВАЖНО: обязательно для запуска как бот
 )
 
 @app.on_message(filters.command("start"))
