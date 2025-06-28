@@ -4,7 +4,7 @@ from pyrogram.types import Message
 # Твои данные
 API_ID = 20234202
 API_HASH = "fc0e099e810cbea903512acef8563b36"
-BOT_TOKEN = "8085881327:AAE4JRvozZmw0uFHvUnE9vaG735e0Zve8Pc"
+BOT_TOKEN = "8085881327:AAHw2qT9ai3oTxT6N_0K5nc903u6VJn4Kn8"
 
 app = Client("ViktorSignalBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
