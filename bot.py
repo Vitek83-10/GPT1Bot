@@ -1,35 +1,49 @@
-from pyrogram import Client, filters
-from pyrogram.types import Message
-import requests
 import os
+import asyncio
+import requests
+from pyrogram import Client, filters
 
-# Переменные окружения
-API_ID = 20234202
-API_HASH = "fc0e099e810cbea903512acef8563b36"
-BOT_TOKEN = "8085881327:AAHw2qT9ai3oTxT6N_0K5nc903u6VJn4Kn8"
-AXIOM_API_KEY = "xapt-e7590452-e334-454f-81e6-095adbef4cee"
-TARGET_CHAT_ID = -1002814931594  # канал "Мои сигналы"
+# Чтение переменных окружения
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+TARGET_CHAT_ID = int(os.getenv("TARGET_CHAT_ID"))
+AXIOM_API_KEY = os.getenv("AXIOM_API_KEY")
 
-app = Client("ViktorSignalBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+app = Client("gpt1bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 @app.on_message(filters.command("start"))
-def start_command(client, message: Message):
-    message.reply_text("🚀 Бот успешно запущен!")
+async def start_handler(client, message):
+    await message.reply("✅ Бот работает и готов к бою!")
 
 @app.on_message(filters.command("status"))
-def status_command(client, message: Message):
-    message.reply_text("✅ Бот работает и готов к действию.")
+async def status_handler(client, message):
+    await message.reply("📡 Статус: бот в онлайне, Axiom API подключен.")
 
-@app.on_message(filters.command("deploy"))
-def deploy_command(client, message: Message):
-    message.reply_text("🦾 Автопоток запущен.")
-    send_signal_to_target("⚙️ Тестовый сигнал: автопоток активен.")
+# Пример работы с Axiom API
+async def fetch_axiom_data():
+    url = "https://api.axiom.xyz/v1/tokens/recent"
+    headers = {
+        "Authorization": f"Bearer {AXIOM_API_KEY}"
+    }
+    try:
+        response = requests.get(url, headers=headers)
+        data = response.json()
+        print(data)  # пока выводим просто в консоль
+    except Exception as e:
+        print("Ошибка при получении данных из Axiom:", e)
 
-def send_signal_to_target(text):
-    app.send_message(chat_id=TARGET_CHAT_ID, text=text)
+# Фоновая задача
+async def background_worker():
+    while True:
+        await fetch_axiom_data()
+        await asyncio.sleep(60)
 
-@app.on_message(filters.command("stop"))
-def stop_command(client, message: Message):
-    message.reply_text("🛑 Поток остановлен.")
+# Запуск бота
+async def main():
+    await app.start()
+    print("🤖 Бот запущен")
+    await background_worker()
 
-app.run()
+if __name__ == "__main__":
+    asyncio.run(main())
