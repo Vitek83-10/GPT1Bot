@@ -1,49 +1,92 @@
 import os
 import asyncio
-import requests
 from pyrogram import Client, filters
+from pyrogram.enums import ParseMode
+from dotenv import load_dotenv
 
-# Чтение переменных окружения
+load_dotenv()
+
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-TARGET_CHAT_ID = int(os.getenv("TARGET_CHAT_ID"))
-AXIOM_API_KEY = os.getenv("AXIOM_API_KEY")
+AXIOM_TOKEN = os.getenv("AXIOM_TOKEN")
+TARGET_CHAT_ID = int(os.getenv("TARGET_CHAT_ID"))  # 👈 обязательно числом!
 
-app = Client("gpt1bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+app = Client(
+    "viktor_bot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN,
+)
+
+# ================= Команды =================
 
 @app.on_message(filters.command("start"))
-async def start_handler(client, message):
-    await message.reply("✅ Бот работает и готов к бою!")
+async def start(client, message):
+    await message.reply("🤖 Бот запущен. Используй /help для списка команд.")
 
 @app.on_message(filters.command("status"))
-async def status_handler(client, message):
-    await message.reply("📡 Статус: бот в онлайне, Axiom API подключен.")
+async def status(client, message):
+    await message.reply("✅ Бот работает и готов к действиям.")
 
-# Пример работы с Axiom API
-async def fetch_axiom_data():
-    url = "https://api.axiom.xyz/v1/tokens/recent"
-    headers = {
-        "Authorization": f"Bearer {AXIOM_API_KEY}"
-    }
-    try:
-        response = requests.get(url, headers=headers)
-        data = response.json()
-        print(data)  # пока выводим просто в консоль
-    except Exception as e:
-        print("Ошибка при получении данных из Axiom:", e)
+@app.on_message(filters.command("help"))
+async def help_command(client, message):
+    await message.reply(
+        "🛠️ Доступные команды:\n"
+        "/start — Запустить бота\n"
+        "/status — Проверить статус\n"
+        "/deploy — Запустить автопоток\n"
+        "/stop — Остановить автопоток\n"
+        "/test — Тестовый сигнал в канал\n"
+        "/metrics — Показать текущие фильтры\n"
+        "/setmetrics — Установить новые фильтры\n"
+        "/ping — Проверка отклика\n"
+        "/version — Версия бота\n"
+        "/help — Помощь и список команд"
+    )
 
-# Фоновая задача
-async def background_worker():
-    while True:
-        await fetch_axiom_data()
-        await asyncio.sleep(60)
+@app.on_message(filters.command("test"))
+async def test_signal(client, message):
+    await app.send_message(
+        chat_id=TARGET_CHAT_ID,
+        text="🧪 Тестовый сигнал успешно отправлен.",
+        parse_mode=ParseMode.HTML
+    )
 
-# Запуск бота
-async def main():
-    await app.start()
-    print("🤖 Бот запущен")
-    await background_worker()
+@app.on_message(filters.command("ping"))
+async def ping(client, message):
+    await message.reply("🏓 Pong!")
+
+@app.on_message(filters.command("version"))
+async def version(client, message):
+    await message.reply("🧬 Версия бота: 1.0.0")
+
+# =========== Функция /id (временно, чтобы узнать ID чата) ===========
+
+@app.on_message(filters.command("id"))
+async def get_id(client, message):
+    await message.reply(f"🆔 chat_id: `{message.chat.id}`")
+
+# =========== Заглушки для deploy/stop/metrics ===========
+
+@app.on_message(filters.command("deploy"))
+async def deploy(client, message):
+    await message.reply("🚀 Автопоток запущен (эмуляция).")
+
+@app.on_message(filters.command("stop"))
+async def stop(client, message):
+    await message.reply("⛔ Автопоток остановлен.")
+
+@app.on_message(filters.command("metrics"))
+async def metrics(client, message):
+    await message.reply("📊 Текущие фильтры: GT Score ≥ 35, Volume ≥ $7K, Migrated ✅")
+
+@app.on_message(filters.command("setmetrics"))
+async def set_metrics(client, message):
+    await message.reply("⚙️ Новые фильтры установлены (эмуляция).")
+
+# ================== Запуск ==================
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    print("✅ Бот запущен и работает.")
+    app.run()
