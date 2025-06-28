@@ -4,7 +4,7 @@ from pyrogram.types import Message
 # Замените на свои значения
 API_ID = 20234202
 API_HASH = "fc0e099e810cbea903512acef8563b36"
-BOT_TOKEN = "7537931821:AAFZnLwQbaX2cKElaPXtyZX1HbypU6elwpE"
+BOT_TOKEN = "7537931821:AAFZnLwQbaXZ9QFY0QHx_oWArS0MneB7QkE"
 
 app = Client("ViktorSignalBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
@@ -16,12 +16,12 @@ async def start_command(client, message: Message):
 # Команда /status
 @app.on_message(filters.command("status"))
 async def status_command(client, message: Message):
-    await message.reply_text("📊 Бот работает корректно.")
+    await message.reply_text("✅ Бот работает и готов к действиям.")
 
 # Команда /deploy
 @app.on_message(filters.command("deploy"))
 async def deploy_command(client, message: Message):
-    await message.reply_text("🔁 Автопоток запущен!")
+    await message.reply_text("📡 Автопоток запущен.")
 
 # Команда /stop
 @app.on_message(filters.command("stop"))
@@ -31,44 +31,43 @@ async def stop_command(client, message: Message):
 # Команда /test
 @app.on_message(filters.command("test"))
 async def test_command(client, message: Message):
-    await message.reply_text("📡 Тестовый сигнал отправлен.")
+    await message.reply_text("🧪 Тестовый сигнал успешно отправлен.")
 
 # Команда /metrics
 @app.on_message(filters.command("metrics"))
 async def metrics_command(client, message: Message):
-    await message.reply_text("📊 Текущие фильтры:\n• GT Score ≥ 35\n• Volume ≥ $80K\n...")
+    await message.reply_text("📊 Текущие фильтры:\n• GT Score ≥ 35\n• Volume ≥ 80K\n• Liquidity ≥ 30K и т.д.")
 
 # Команда /setmetrics
 @app.on_message(filters.command("setmetrics"))
 async def setmetrics_command(client, message: Message):
-    await message.reply_text("⚙️ Настройка фильтров: отправьте JSON с новыми метриками.")
+    await message.reply_text("⚙️ Настройка фильтров: отправьте параметры в формате:\n`GT=35, Volume=80K, Liquidity=30K`")
 
 # Команда /ping
 @app.on_message(filters.command("ping"))
 async def ping_command(client, message: Message):
-    await message.reply_text("🏓 Бот в сети!")
+    await message.reply_text("📡 Бот на связи!")
 
 # Команда /version
 @app.on_message(filters.command("version"))
 async def version_command(client, message: Message):
-    await message.reply_text("🤖 Версия бота: 1.0.0")
+    await message.reply_text("🧠 Версия бота: v1.0")
 
 # Команда /help
 @app.on_message(filters.command("help"))
 async def help_command(client, message: Message):
     await message.reply_text(
-        "📘 *Список команд:*\n\n"
-        "• /start — Запустить бота\n"
-        "• /status — Проверить статус\n"
-        "• /deploy — Запустить автопоток\n"
-        "• /stop — Остановить автопоток\n"
-        "• /test — Отправить тестовый сигнал\n"
-        "• /metrics — Показать текущие фильтры\n"
-        "• /setmetrics — Установить новые фильтры\n"
-        "• /ping — Проверка отклика\n"
-        "• /version — Показать версию бота\n"
-        "• /help — Помощь и список команд\n",
-        parse_mode="Markdown"
+        "🛠 Доступные команды:\n"
+        "/start — Запустить бота\n"
+        "/status — Проверить статус\n"
+        "/deploy — Запустить автопоток\n"
+        "/stop — Остановить автопоток\n"
+        "/test — Тестовый сигнал в канал\n"
+        "/metrics — Показать текущие фильтры\n"
+        "/setmetrics — Установить новые фильтры\n"
+        "/ping — Проверка отклика\n"
+        "/version — Версия бота\n"
+        "/help — Помощь и список команд"
     )
 
 # Запуск бота
