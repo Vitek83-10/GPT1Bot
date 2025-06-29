@@ -1,5 +1,4 @@
-import asyncio
-from pyrogram import Client
+pyrogram import Client
 import httpx
 
 BOT_TOKEN = "8085881327:AAHtgjesSjMbyektB5W2YXlSDQAGk_MMPfc"
@@ -24,6 +23,3 @@ async def main():
         for token in tokens[:5]:  # только первые 5 токенов для проверки
             message = f"🔔 Новый токен: {token.get('name', 'Unnamed')} \nCA: `{token.get('address')}`"
             await app.send_message(chat_id=CHAT_ID, text=message)
-
-if __name__ == "__main__":
-    asyncio.run(main())
