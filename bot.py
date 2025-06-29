@@ -1,44 +1,148 @@
+import os
 import asyncio
-from pyrogram import Client, filters
-from pyrogram.types import Message
-import subprocess
+import logging
+import aiohttp
+from pyrogram import Client
+from datetime import datetime, timezone
 
-# 🔐 Данные твоего Telegram-приложения (api_id и api_hash)
-API_ID = 20234202
-API_HASH = "fc0e099e810cbea903512acef8563b36"
+# === Константы и переменные ===
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+API_ID = os.getenv("API_ID")
+API_HASH = os.getenv("API_HASH")
+CHANNEL_ID = os.getenv("CHANNEL_ID")
+AXIOM_TOKEN = os.getenv("AXIOM_TOKEN")
 
-# 🤖 Токен твоего бота
-BOT_TOKEN = "8085881327:AAHtgjesSjMbyektB5W2YXlSDQAGk_MMPfc"
+AXIOM_API_URL = "https://api.axiom.xyz/v1/alerts/search"
 
-# 📲 Подключение клиента
-app = Client("viktor_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+# === Настройка логгера ===
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# ✅ Команда /start
-@app.on_message(filters.command("start"))
-async def start_command(client: Client, message: Message):
-    await message.reply("🤖 Бот запущен. Используй /help для списка команд.")
+# === Клиент Telegram ===
+app = Client("signal_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# ✅ Команда /help
-@app.on_message(filters.command("help"))
-async def help_command(client: Client, message: Message):
-    await message.reply("📋 Команды: /start, /help, /ping, /status, /id")
+# === Функция фильтрации токенов по метрикам ===
+def is_token_valid(data: dict) -> bool:
+    try:
+        stats = data.get("stats", {})
+        market_cap = stats.get("marketCap", 0)
+        liquidity = stats.get("liquidity", 0)
+        volume = stats.get("volume", 0)
+        volume5min = stats.get("volume5min", 0)
+        last_volume = stats.get("lastVolume", 0)
+        volume_multiplier = stats.get("volumeMultiplier", 0)
+        top10 = stats.get("top10", 100)
+        holders = stats.get("holders", 0)
+        insiders = stats.get("insiders", 100)
+        snipers = stats.get("snipers", 100)
+        bundle_supply = stats.get("bundleSupply", 100)
+        gt_score = stats.get("gtScore", 0)
+        migrated = stats.get("migrated", 0)
 
-# ✅ Команда /ping
-@app.on_message(filters.command("ping"))
-async def ping_command(client: Client, message: Message):
-    await message.reply("🏓 Pong!")
+        # Только мигрировавшие
+        if migrated != 1:
+            return False
 
-# ✅ Команда /status
-@app.on_message(filters.command("status"))
-async def status_command(client: Client, message: Message):
-    await message.reply("✅ Бот работает и готов к действиям.")
+        # Основной фильтр
+        return (
+            market_cap >= 90000 and
+            liquidity >= 30000 and
+            volume >= 80000 and
+            last_volume >= 15000 and
+            volume_multiplier >= 4 and
+            top10 <= 30 and
+            holders >= 200 and
+            insiders == 0 and
+            snipers <= 6 and
+            bundle_supply <= 35 and
+            gt_score >= 35
+        )
+    except Exception as e:
+        logger.error(f"Ошибка при фильтрации токена: {e}")
+        return False
 
-# ✅ Команда /id
-@app.on_message(filters.command("id"))
-async def id_command(client: Client, message: Message):
-    await message.reply(f"🆔 chat_id: {message.chat.id}")
+# === Форматирование Telegram-сообщения ===
+def format_alert(data: dict) -> str:
+    stats = data.get("stats", {})
+    token = data.get("token", {})
+    symbol = token.get("symbol", "N/A")
+    address = token.get("address", "N/A")
+    timestamp = data.get("timestamp")
 
-# 🚀 Запуск бота
+    time_str = datetime.fromtimestamp(timestamp, tz=timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+
+    message = f"""✅ <b>Сигнал от Axiom</b>
+📍 <b>Токен:</b> <code>{symbol}</code>
+🕒 <b>Время:</b> {time_str}
+
+💠 <b>Метрики:</b>
+• MarketCap: ${int(stats.get("marketCap", 0)):,}
+• Liquidity: ${int(stats.get("liquidity", 0)):,}
+• Volume: ${int(stats.get("volume", 0)):,}
+• Last Volume: ${int(stats.get("lastVolume", 0)):,}
+• Volume Multiplier: {stats.get("volumeMultiplier", 0)}x
+• Top10 Holders: {stats.get("top10", 0)}%
+• Total Holders: {stats.get("holders", 0)}
+• GT Score: {stats.get("gtScore", 0)}
+• Bundle Supply: {stats.get("bundleSupply", 0)}%
+• Snipers: {stats.get("snipers", 0)}
+• Migrated: ✅
+
+🔗 <b>Ссылки:</b>
+• <a href="https://dexscreener.com/solana/{address}">DexScreener</a>
+• <a href="https://www.birdeye.so/token/{address}?chain=solana">Birdeye</a>
+• <a href="https://app.axiom.xyz/token/{address}">Axiom</a>
+"""
+    return message
+
+# === Запрос к Axiom API ===
+async def fetch_alerts():
+    headers = {
+        "Authorization": f"Bearer {AXIOM_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "limit": 15,
+        "order": "desc"
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(AXIOM_API_URL, json=payload, headers=headers) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return data.get("data", [])
+            else:
+                logger.error(f"Ошибка запроса Axiom: {resp.status}")
+                return []
+
+# === Основной цикл ===
+last_ids = set()
+
+async def main_loop():
+    await app.start()
+    logger.info("Бот запущен и работает...")
+
+    while True:
+        try:
+            alerts = await fetch_alerts()
+            for alert in alerts:
+                alert_id = alert.get("id")
+                if alert_id in last_ids:
+                    continue
+                if is_token_valid(alert):
+                    msg = format_alert(alert)
+                    await app.send_message(CHANNEL_ID, msg, parse_mode="html", disable_web_page_preview=True)
+                    logger.info(f"📤 Отправлен сигнал: {alert.get('token', {}).get('symbol')}")
+                last_ids.add(alert_id)
+
+            # Храним последние 30 ID, чтобы не дублировать
+            if len(last_ids) > 30:
+                last_ids.clear()
+
+        except Exception as e:
+            logger.error(f"Ошибка в основном цикле: {e}")
+
+        await asyncio.sleep(60)
+
+# === Запуск ===
 if __name__ == "__main__":
-    subprocess.Popen(["python", "Zentest_Token_Rule.py"])
-    app.run()
+    asyncio.run(main_loop())
