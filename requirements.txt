@@ -3,3 +3,4 @@ tgcrypto
 requests
 aiohttp
 python-dotenv
+httpx
