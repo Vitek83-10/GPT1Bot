@@ -1,85 +1,41 @@
 import asyncio
 from pyrogram import Client, filters
-from pyrogram.enums import ParseMode
-from dotenv import load_dotenv
+from pyrogram.types import Message
+import subprocess
 
-load_dotenv()
+# 🔐 Токен твоего бота
+BOT_TOKEN = "8085881327:AAHtgjesSjMbyektB5W2YXlSDQAGk_MMPfc"
 
-API_ID = int(os.getenv("API_ID"))
-API_HASH = os.getenv("API_HASH")
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-AXIOM_TOKEN = os.getenv("AXIOM_TOKEN")
-TARGET_CHAT_ID = int(os.getenv("TARGET_CHAT_ID"))  # 👈 обязательно числом!
+# 📲 Создание клиента
+app = Client("viktor_session", bot_token=BOT_TOKEN)
 
-app = Client(
-    "viktor_bot",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    bot_token=BOT_TOKEN,
-)
-
-# ================= Команды =================
-
+# ✅ Команда /start
 @app.on_message(filters.command("start"))
-async def start(client, message):
+async def start_command(client: Client, message: Message):
     await message.reply("🤖 Бот запущен. Используй /help для списка команд.")
 
-@app.on_message(filters.command("status"))
-async def status(client, message):
-    await message.reply("✅ Бот работает и готов к действиям.")
-
+# ✅ Команда /help
 @app.on_message(filters.command("help"))
-async def help_command(client, message):
-    await message.reply(
-        "🛠️ Доступные команды:\n"
-        "/start — Запустить бота\n"
-        "/status — Проверить статус\n"
-        "/deploy — Запустить автопоток\n"
-        "/stop — Остановить автопоток\n"
-        "/test — Тестовый сигнал в канал\n"
-        "/metrics — Показать текущие фильтры\n"
-        "/setmetrics — Установить новые фильтры\n"
-        "/ping — Проверка отклика\n"
-        "/version — Версия бота\n"
-        "/help — Помощь и список команд"
-    )
+async def help_command(client: Client, message: Message):
+    await message.reply("📋 Доступные команды:\n/start — запуск\n/help — список команд\n/ping — тест\n/status — статус\n/id — показать chat_id")
 
-@app.on_message(filters.command("test"))
-async def test_signal(client, message):
-    await app.send_message(
-        chat_id=TARGET_CHAT_ID,
-        text="🧪 Тестовый сигнал успешно отправлен.",
-        parse_mode=ParseMode.HTML
-    )
-
+# ✅ Команда /ping
 @app.on_message(filters.command("ping"))
-async def ping(client, message):
+async def ping_command(client: Client, message: Message):
     await message.reply("🏓 Pong!")
 
-@app.on_message(filters.command("version"))
-async def version(client, message):
-    await message.reply("🧬 Версия бота: 1.0.0")
+# ✅ Команда /status
+@app.on_message(filters.command("status"))
+async def status_command(client: Client, message: Message):
+    await message.reply("✅ Бот работает и готов к действиям.")
 
-# =========== Функция /id (временно, чтобы узнать ID чата) ===========
-
+# ✅ Команда /id
 @app.on_message(filters.command("id"))
-async def get_id(client, message):
-    await message.reply(f"🆔 chat_id: `{message.chat.id}`")
+async def id_command(client: Client, message: Message):
+    await message.reply(f"🆔 chat_id: {message.chat.id}")
 
-# =========== Заглушки для deploy/stop/metrics ===========
-
-@app.on_message(filters.command("deploy"))
-async def deploy(client, message):
-    await message.reply("🚀 Автопоток запущен (эмуляция).")
-
-@app.on_message(filters.command("stop"))
-async def stop(client, message):
-    await message.reply("⛔ Автопоток остановлен.")
-
-@app.on_message(filters.command("metrics"))
-async def metrics(client, message):
-    await message.reply("📊 Текущие фильтры: GT Score ≥ 35, Volume ≥ $7K, Migrated ✅")
-
-@app.on_message(filters.command("setmetrics"))
-async def set_metrics(client, message):
-    await message.reply("⚙️ Новые фильтры установлены (эмуляция).")
+# 🚀 Запуск бота
+if __name__ == "__main__":
+    # ⏱ Параллельный запуск Zentest_Token_Rule.py
+    subprocess.Popen(["python", "Zentest_Token_Rule.py"])
+    app.run()
