@@ -1,4 +1,3 @@
-import os
 import asyncio
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
@@ -84,9 +83,3 @@ async def metrics(client, message):
 @app.on_message(filters.command("setmetrics"))
 async def set_metrics(client, message):
     await message.reply("⚙️ Новые фильтры установлены (эмуляция).")
-
-# ================== Запуск ==================
-
-if __name__ == "__main__":
-    print("✅ Бот запущен и работает.")
-    app.run()
