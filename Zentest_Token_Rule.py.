@@ -1,20 +1,20 @@
 import asyncio
 from pyrogram import Client
 
-# Конфигурация
+# 🔐 Твои данные
 api_id = 20234202
 api_hash = "fc0e099e810cbea903512acef8563b36"
 bot_token = "8085881327:AAHtgjesSjMbyektB5W2YX1SDQAGk_MMPfc"
 chat_id = 1047298304
 
-# Инициализация клиента
 app = Client("bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
-# Функция отправки
-async def send_token():
+async def send_message():
     async with app:
-        await app.send_message(chat_id, "🧪 Zentest Rule:\n`FAKE_XYZ_TOKEN_001_TEST`", parse_mode="Markdown")
+        await app.send_message(
+            chat_id,
+            "🚀 Zentest_Token_Rule.py успешно запущен и работает!",
+        )
 
-# Запуск
 if __name__ == "__main__":
-    asyncio.run(send_token())
+    asyncio.run(send_message())
