@@ -3,11 +3,15 @@ from pyrogram import Client, filters
 from pyrogram.types import Message
 import subprocess
 
-# 🔐 Токен твоего бота
+# 🔐 Данные твоего Telegram-приложения (api_id и api_hash)
+API_ID = 20234202
+API_HASH = "fc0e099e810cbea903512acef8563b36"
+
+# 🤖 Токен твоего бота
 BOT_TOKEN = "8085881327:AAHtgjesSjMbyektB5W2YXlSDQAGk_MMPfc"
 
-# 📲 Создание клиента
-app = Client("viktor_session", bot_token=BOT_TOKEN)
+# 📲 Подключение клиента
+app = Client("viktor_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 # ✅ Команда /start
 @app.on_message(filters.command("start"))
@@ -17,7 +21,7 @@ async def start_command(client: Client, message: Message):
 # ✅ Команда /help
 @app.on_message(filters.command("help"))
 async def help_command(client: Client, message: Message):
-    await message.reply("📋 Доступные команды:\n/start — запуск\n/help — список команд\n/ping — тест\n/status — статус\n/id — показать chat_id")
+    await message.reply("📋 Команды: /start, /help, /ping, /status, /id")
 
 # ✅ Команда /ping
 @app.on_message(filters.command("ping"))
@@ -36,6 +40,5 @@ async def id_command(client: Client, message: Message):
 
 # 🚀 Запуск бота
 if __name__ == "__main__":
-    # ⏱ Параллельный запуск Zentest_Token_Rule.py
     subprocess.Popen(["python", "Zentest_Token_Rule.py"])
     app.run()
