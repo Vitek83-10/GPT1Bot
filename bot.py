@@ -9,8 +9,8 @@ from datetime import datetime, timezone
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
-CHANNEL_ID = os.getenv("CHANNEL_ID")
-AXIOM_TOKEN = os.getenv("AXIOM_TOKEN")
+CHANNEL_ID = int(os.getenv("TARGET_CHAT_ID"))  # <-- ВАЖНО: исправлено!
+AXIOM_TOKEN = os.getenv("AXIOM_API_KEY")
 
 AXIOM_API_URL = "https://api.axiom.xyz/v1/alerts/search"
 
@@ -28,7 +28,6 @@ def is_token_valid(data: dict) -> bool:
         market_cap = stats.get("marketCap", 0)
         liquidity = stats.get("liquidity", 0)
         volume = stats.get("volume", 0)
-        volume5min = stats.get("volume5min", 0)
         last_volume = stats.get("lastVolume", 0)
         volume_multiplier = stats.get("volumeMultiplier", 0)
         top10 = stats.get("top10", 100)
@@ -39,11 +38,9 @@ def is_token_valid(data: dict) -> bool:
         gt_score = stats.get("gtScore", 0)
         migrated = stats.get("migrated", 0)
 
-        # Только мигрировавшие
         if migrated != 1:
             return False
 
-        # Основной фильтр
         return (
             market_cap >= 90000 and
             liquidity >= 30000 and
@@ -134,7 +131,6 @@ async def main_loop():
                     logger.info(f"📤 Отправлен сигнал: {alert.get('token', {}).get('symbol')}")
                 last_ids.add(alert_id)
 
-            # Храним последние 30 ID, чтобы не дублировать
             if len(last_ids) > 30:
                 last_ids.clear()
 
