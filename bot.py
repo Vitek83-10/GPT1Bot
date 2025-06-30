@@ -5,7 +5,6 @@ import aiohttp
 from pyrogram import Client
 from datetime import datetime
 
-# Настройка логгирования
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 API_ID = int(os.environ.get("API_ID"))
@@ -16,7 +15,7 @@ AXIOM_API_KEY = os.environ.get("AXIOM_API_KEY")
 
 app = Client("gpt1_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-AXIOM_ENDPOINT = "https://api.axiom.xyz/api/v1/feed/alerts/filtered"  # ← исправлено
+AXIOM_ENDPOINT = "https://api.axiom.xyz/api/v1/alerts/filtered"  # ✅ Правильный endpoint
 
 HEADERS = {
     "accept": "application/json",
