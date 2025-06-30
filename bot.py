@@ -2,27 +2,29 @@ import os
 import logging
 import asyncio
 import aiohttp
-from pyrogram import Client
+from pyrogram import Client, filters
 from datetime import datetime
 
+# Логгирование
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+# Переменные окружения
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 TARGET_CHAT_ID = int(os.environ.get("TARGET_CHAT_ID"))
 AXIOM_API_KEY = os.environ.get("AXIOM_API_KEY")
 
-app = Client("gpt1_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+# Telegram клиент
+app = Client("viktor_signal_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-AXIOM_ENDPOINT = "https://api.axiom.xyz/api/v1/alerts/filtered"  # ✅ Правильный endpoint
-
+# Axiom параметры
+AXIOM_ENDPOINT = "https://api.axiom.xyz/api/v1/feed/alerts/filtered"
 HEADERS = {
     "accept": "application/json",
     "authorization": AXIOM_API_KEY,
     "Content-Type": "application/json",
 }
-
 PAYLOAD = {
     "filters": {
         "is_migrated": True,
@@ -42,6 +44,12 @@ PAYLOAD = {
 }
 
 
+# Команда /status
+@app.on_message(filters.command("status"))
+async def status_handler(client, message):
+    await message.reply("✅ Бот активен. Проверка Axiom включена.")
+
+# Получение сигналов Axiom
 async def fetch_filtered_alerts():
     try:
         async with aiohttp.ClientSession() as session:
@@ -50,13 +58,14 @@ async def fetch_filtered_alerts():
                     data = await resp.json()
                     return data.get("data", [])
                 else:
-                    logging.error(f"❌ Ошибка при запросе Axiom API: {resp.status}")
+                    logging.error(f"❌ Axiom API: {resp.status}")
                     return []
     except Exception as e:
-        logging.error(f"❌ Ошибка запроса к Axiom: {str(e)}")
+        logging.error(f"❌ Axiom ошибка: {str(e)}")
         return []
 
 
+# Отправка сигнала
 async def send_signal(alert):
     token = alert.get("token", {})
     name = token.get("name", "Unknown")
@@ -91,20 +100,25 @@ async def send_signal(alert):
 • 🧨 Snipers: {snipers}
 • 📦 Bundled: {bundle}%
 
-📡 <i>Сигнал от Axiom, миграция подтверждена.</i>"""
+📡 <i>Сигнал от Axiom. Миграция подтверждена.</i>"""
 
     await app.send_message(chat_id=TARGET_CHAT_ID, text=msg, parse_mode="HTML")
 
 
+# Основной цикл
 async def main_loop():
+    logging.info("🔁 Запуск цикла Axiom...")
     while True:
-        logging.info("🟢 Axiom проверка запущена")
         alerts = await fetch_filtered_alerts()
         for alert in alerts:
             await send_signal(alert)
-        await asyncio.sleep(300)
+        await asyncio.sleep(300)  # каждые 5 минут
 
+
+# Точка входа
+async def main():
+    async with app:
+        await main_loop()
 
 if __name__ == "__main__":
-    app.start()
-    asyncio.get_event_loop().run_until_complete(main_loop())
+    asyncio.run(main())
