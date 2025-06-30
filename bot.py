@@ -1,45 +1,70 @@
+import asyncio
 import os
 import logging
-import requests
-from pyrogram import Client, filters
+import aiohttp
+from pyrogram import Client
+
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+TARGET_CHAT_ID = os.getenv("TARGET_CHAT_ID")
+AXIOM_API_KEY = os.getenv("AXIOM_API_KEY")
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-API_ID = int(os.environ.get("API_ID"))
-API_HASH = os.environ.get("API_HASH")
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-AXIOM_API_KEY = os.environ.get("AXIOM_API_KEY")
-TARGET_CHAT_ID = int(os.environ.get("TARGET_CHAT_ID"))
+app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-bot = Client("bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
-
-AXIOM_HEADERS = {
-    "accept": "application/json",
-    "Authorization": f"Bearer {AXIOM_API_KEY}"
-}
-
-# 👇 Укажи здесь ID своей организации в Axiom
-WORKSPACE_ID = "viktorsignals"  # если нужно — поменяем
-
-@bot.on_message(filters.command("test"))
-async def test_axiom(_, message):
-    url = "https://api.axiom.xyz/v1/alerts/search"
-    payload = {
-        "workspaceId": WORKSPACE_ID,
-        "limit": 1
+async def fetch_axiom_data():
+    url = "https://api.axiom.trade/v1/pulse/token"  # пример URL — замени при необходимости
+    headers = {
+        "Authorization": f"Bearer {AXIOM_API_KEY}",
+        "accept": "application/json"
     }
 
-    response = requests.post(url, headers=AXIOM_HEADERS, json=payload)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as response:
+            if response.status != 200:
+                logger.error(f"Ошибка при запросе Axiom API: {response.status}")
+                return None
+            return await response.json()
 
-    if response.status_code == 200:
-        await message.reply("✅ Axiom API успешно отвечает!")
-    else:
-        await message.reply(f"❌ Ошибка Axiom: {response.status_code}\n{response.text}")
+async def check_axiom_tokens():
+    logger.info("🟢 Axiom проверка запущена")  # ← логгирование запуска
+    print("🟢 Axiom проверка запущена")       # ← будет видно в логах Render
 
-@bot.on_message(filters.command("start") | filters.command("status"))
-async def status_handler(_, message):
-    await message.reply("✅ Бот работает и подключён!")
+    data = await fetch_axiom_data()
+    if not data:
+        return
+
+    tokens = data.get("tokens", [])
+    logger.info(f"🔍 Найдено токенов: {len(tokens)}")
+
+    for token in tokens:
+        name = token.get("name", "Unknown")
+        mc = token.get("marketCap", 0)
+        liq = token.get("liquidity", 0)
+        vol = token.get("volume", 0)
+
+        # Пример фильтрации:
+        if mc >= 90000 and liq >= 30000 and vol >= 80000:
+            msg = f"✅ Новый токен:\nName: {name}\nMC: ${mc}\nLiquidity: ${liq}\nVolume: ${vol}"
+            await app.send_message(chat_id=int(TARGET_CHAT_ID), text=msg)
+            logger.info(f"📤 Отправлено: {name}")
+
+@app.on_message()
+async def handler(_, message):
+    if message.text == "/status":
+        await message.reply("🤖 Бот активен и работает.")
+
+async def main():
+    await app.start()
+    while True:
+        try:
+            await check_axiom_tokens()
+        except Exception as e:
+            logger.error(f"❌ Ошибка в check_axiom_tokens: {e}")
+        await asyncio.sleep(60)
 
 if __name__ == "__main__":
-    logging.info("🚀 Тестовый бот запущен...")
-    bot.run()
+    asyncio.run(main())
