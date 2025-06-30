@@ -16,7 +16,7 @@ AXIOM_API_KEY = os.environ.get("AXIOM_API_KEY")
 
 app = Client("gpt1_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-AXIOM_ENDPOINT = "https://api.axiom.so/api/v1/feed/alerts/filtered"
+AXIOM_ENDPOINT = "https://api.axiom.xyz/api/v1/feed/alerts/filtered"  # ← исправлено
 
 HEADERS = {
     "accept": "application/json",
@@ -26,7 +26,7 @@ HEADERS = {
 
 PAYLOAD = {
     "filters": {
-        "is_migrated": True,  # Только токены с миграцией
+        "is_migrated": True,
         "market_cap_usd": {"$gte": 90000},
         "liquidity_usd": {"$gte": 30000},
         "volume_usd_5m": {"$gte": 80000},
@@ -103,7 +103,7 @@ async def main_loop():
         alerts = await fetch_filtered_alerts()
         for alert in alerts:
             await send_signal(alert)
-        await asyncio.sleep(300)  # Пауза 5 минут
+        await asyncio.sleep(300)
 
 
 if __name__ == "__main__":
