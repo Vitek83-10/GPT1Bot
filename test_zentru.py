@@ -1,8 +1,11 @@
 import os
+from dotenv import load_dotenv
 from telegram import Bot
 
-TOKEN = os.getenv("BOT_TOKEN", "вставь_сюда_токен_если_без_env")
-CHAT_ID = os.getenv("TEST_CHAT_ID", "вставь_сюда_ID_если_без_env")
+load_dotenv()  # Загружаем переменные из .env
+
+TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("TARGET_CHAT_ID")
 
 bot = Bot(token=TOKEN)
-bot.send_message(chat_id=CHAT_ID, text="✅ Zentru тест: бот работает!")
+bot.send_message(chat_id=CHAT_ID, text="✅ Zentru тест: бот работает через .env!")
