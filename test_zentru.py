@@ -7,4 +7,4 @@ CHAT_ID = os.getenv("TARGET_CHAT_ID")
 
 # Создаём экземпляр бота и отправляем тестовое сообщение
 bot = Bot(token=TOKEN)
-bot.send_message(chat_id=CHAT_ID, text="✅ Test passed! Бот работает.")
+bot.send_message(chat_id=CHAT_ID, text="✅ Тестовое сообщение от Zentru: бот работает!")
