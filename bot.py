@@ -1,124 +1,54 @@
 import os
 import logging
-import asyncio
-import aiohttp
 from pyrogram import Client, filters
-from datetime import datetime
+from pyrogram.types import Message
 
-# Логгирование
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-
-# Переменные окружения
+# 🔧 Настройки окружения
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
+
+# 🎯 ID чата для отправки сигналов
 TARGET_CHAT_ID = int(os.environ.get("TARGET_CHAT_ID"))
-AXIOM_API_KEY = os.environ.get("AXIOM_API_KEY")
 
-# Telegram клиент
-app = Client("viktor_signal_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+# 🪛 Настройка логгирования
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# Axiom параметры
-AXIOM_ENDPOINT = "https://api.axiom.xyz/api/v1/feed/alerts/filtered"
-HEADERS = {
-    "accept": "application/json",
-    "authorization": AXIOM_API_KEY,
-    "Content-Type": "application/json",
-}
-PAYLOAD = {
-    "filters": {
-        "is_migrated": True,
-        "market_cap_usd": {"$gte": 90000},
-        "liquidity_usd": {"$gte": 30000},
-        "volume_usd_5m": {"$gte": 80000},
-        "volume_usd_last": {"$gte": 15000},
-        "volume_multiplier_5m": {"$gte": 4},
-        "holders_total": {"$gte": 200},
-        "holders_top_10_percent": {"$lte": 30},
-        "insiders_percent": 0,
-        "snipers_total": {"$lte": 6},
-        "bundle_percent": {"$lte": 35},
-    },
-    "limit": 5,
-    "sort": {"timestamp": -1}
-}
+# 🤖 Инициализация бота
+app = Client("signal_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
+# ✅ Команда /start
+@app.on_message(filters.command("start") & filters.private)
+async def start_handler(client: Client, message: Message):
+    await message.reply("👋 Бот активен и готов к приёму сигналов.")
 
-# Команда /status
-@app.on_message(filters.command("status"))
-async def status_handler(client, message):
-    await message.reply("✅ Бот активен. Проверка Axiom включена.")
+# ✅ Команда /status
+@app.on_message(filters.command("status") & filters.private)
+async def status_handler(client: Client, message: Message):
+    await message.reply("📡 Статус: бот запущен, ожидание сигналов...")
 
-# Получение сигналов Axiom
-async def fetch_filtered_alerts():
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(AXIOM_ENDPOINT, headers=HEADERS, json=PAYLOAD) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    return data.get("data", [])
-                else:
-                    logging.error(f"❌ Axiom API: {resp.status}")
-                    return []
-    except Exception as e:
-        logging.error(f"❌ Axiom ошибка: {str(e)}")
-        return []
-
-
-# Отправка сигнала
-async def send_signal(alert):
-    token = alert.get("token", {})
-    name = token.get("name", "Unknown")
-    symbol = token.get("symbol", "")
-    address = token.get("address", "")
-    market_cap = round(alert.get("market_cap_usd", 0))
-    liquidity = round(alert.get("liquidity_usd", 0))
-    volume = round(alert.get("volume_usd_5m", 0))
-    gt_score = alert.get("gt_score", 0)
-    holders = alert.get("holders_total", 0)
-    top10 = alert.get("holders_top_10_percent", 0)
-    insiders = alert.get("insiders_percent", 0)
-    snipers = alert.get("snipers_total", 0)
-    bundle = alert.get("bundle_percent", 0)
-    timestamp = alert.get("timestamp")
-
-    time_str = datetime.fromisoformat(timestamp.replace("Z", "+00:00")).strftime("%Y-%m-%d %H:%M:%S")
-
-    msg = f"""✅ <b>Новый токен с миграцией!</b>
-<b>{name} ({symbol})</b>
-🕒 {time_str}
-🔗 <code>{address}</code>
+# ✅ Команда /test — имитация сигнала
+@app.on_message(filters.command("test") & filters.private)
+async def test_handler(client: Client, message: Message):
+    sample = """✅ <b>Тестовый сигнал</b>
+<b>ExampleToken (EXT)</b>
+🕒 2025-06-30 18:45:00
+🔗 <code>0xExampleAddress123</code>
 
 📊 <b>Метрики:</b>
-• 💰 MCap: ${market_cap}
-• 💧 Liquidity: ${liquidity}
-• 📈 Volume (5m): ${volume}
-• 🧠 GT Score: {gt_score}
-• 👥 Holders: {holders}
-• 🏦 Top10: {top10}%
-• 🕵️ Insiders: {insiders}%
-• 🧨 Snipers: {snipers}
-• 📦 Bundled: {bundle}%
+• 💰 MCap: $123456
+• 💧 Liquidity: $34567
+• 📈 Volume (5m): $45678
+• 🧠 GT Score: 72
+• 👥 Holders: 840
+• 🏦 Top10: 14.2%
+• 🕵️ Insiders: 0%
+• 🧨 Snipers: 3
+• 📦 Bundled: 9.3%
 
-📡 <i>Сигнал от Axiom. Миграция подтверждена.</i>"""
+📡 <i>Сигнал прошёл фильтрацию по метрикам.</i>"""
+    await message.reply("🧪 Тест-сигнал отправлен в канал.")
+    await app.send_message(chat_id=TARGET_CHAT_ID, text=sample, parse_mode="HTML")
 
-    await app.send_message(chat_id=TARGET_CHAT_ID, text=msg, parse_mode="HTML")
-
-
-# Основной цикл
-async def main_loop():
-    logging.info("🔁 Запуск цикла Axiom...")
-    while True:
-        alerts = await fetch_filtered_alerts()
-        for alert in alerts:
-            await send_signal(alert)
-        await asyncio.sleep(300)  # каждые 5 минут
-
-
-# Точка входа
-async def main():
-    async with app:
-        await main_loop()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# 🔁 Запуск бота
+app.run()
